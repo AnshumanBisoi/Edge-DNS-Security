@@ -1,60 +1,43 @@
 # Edge DNS Security Gateway
 
-A C++17 based DNS security gateway that filters DNS requests at the edge.
+## 1. Project Overview
 
-## Features
+Edge DNS Security Gateway is a C++17 based DNS security and filtering system designed to inspect DNS requests before allowing them to proceed.
 
-- DNS domain resolution
-- Blocklist-based domain filtering
-- DNS response caching
-- TTL-based cache expiration
-- DNS activity logging
-- Query statistics
-- Cache-hit detection
+The system provides domain filtering, DNS resolution, DNS response caching, activity logging, and query statistics.
 
-## Technologies
+The project is developed and tested on Linux using Ubuntu running inside a UTM virtual machine.
 
-- C++17
-- Linux
-- DNS
-- Git
-- UTM Ubuntu Virtual Machine
+---
 
-## Security Features
+## 2. Objectives
 
-The gateway blocks configured malicious domains such as:
+The main objectives are:
 
-- malicious.test
-- phishing.test
-- malware.test
+- Implement a DNS security gateway using C++.
+- Filter configured blocked domains.
+- Resolve allowed domains using the system DNS resolver.
+- Cache DNS results temporarily using TTL.
+- Record DNS security activity.
+- Maintain query statistics.
+- Demonstrate Linux system programming concepts.
+- Use Git for version control and project development.
 
-Allowed domains are resolved normally.
+---
 
-## Cache
+## 3. Main Features
 
-DNS responses are stored temporarily in an in-memory cache.
+### DNS Filtering
 
-When the same domain is requested again before the TTL expires:
+Domains listed in:
 
-CACHE HIT
+`config/blocked_domains.txt`
 
-After the TTL expires, the domain is resolved again.
+are blocked before DNS resolution.
 
-## Statistics
+Example:
 
-The gateway records:
+```text
+malicious.test -> BLOCKED
+phishing.test  -> BLOCKED
 
-- Total queries
-- Allowed queries
-- Blocked queries
-- Cache hits
-
-## Example
-
-google.com → RESOLVED
-
-google.com → CACHE HIT
-
-malicious.test → BLOCKED
-
-phishing.test → BLOCKED
