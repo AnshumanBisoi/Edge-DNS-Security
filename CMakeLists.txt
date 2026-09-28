@@ -13,6 +13,12 @@ add_executable(dns_security
     src/DNSResolver.cpp
     src/DNSCache.cpp
     src/DNSPacket.cpp
+    src/DNSAnomalyDetector.cpp
     src/Logger.cpp
     src/Statistics.cpp
+)
+
+add_executable(test_dns_anomaly
+    tests/test_dns_anomaly.cpp
+    src/DNSAnomalyDetector.cpp
 )

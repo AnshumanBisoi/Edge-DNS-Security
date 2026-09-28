@@ -1,10 +1,11 @@
-
 #include <iostream>
 #include <string>
 
 #include "DNSFilter.h"
 #include "DNSResolver.h"
 #include "DNSCache.h"
+#include "DNSPacket.h"
+#include "DNSAnomalyDetector.h"
 #include "Logger.h"
 #include "Statistics.h"
 
@@ -13,6 +14,7 @@ int main() {
     DNSFilter filter;
     DNSResolver resolver;
     DNSCache cache(10);
+    DNSAnomalyDetector anomalyDetector;
     Logger logger("logs/dns_activity.log");
     Statistics stats;
 
@@ -21,7 +23,7 @@ int main() {
 
     std::string domain;
 
-    std::cout << "\n=== Edge DNS Security Gateway ===\n";
+    std::cout << "\n=== Edge DNS Sinkhole & Protocol Anomaly Interceptor ===\n";
     std::cout << "Enter a domain to check (type 'exit' to quit).\n\n";
 
     while (true) {
@@ -38,20 +40,48 @@ int main() {
         stats.recordAllowed();
 
         // --------------------------------
-        // 1. Check blocked domain
+        // 1. Protocol Anomaly Detection
         // --------------------------------
-        if (filter.isBlocked(domain)) {
+        if (anomalyDetector.isAnomalous(domain)) {
 
-            std::cout << "BLOCKED: " << domain << std::endl;
+            std::string reason =
+                anomalyDetector.getReason(domain);
 
-            stats.recordBlocked();
-            logger.log(domain, "BLOCKED");
+            std::cout << "PROTOCOL ANOMALY DETECTED: "
+                      << domain << std::endl;
+
+            std::cout << "Reason: "
+                      << reason << std::endl;
+
+            std::cout << "INTERCEPTED" << std::endl;
+
+            logger.log(
+                domain,
+                "ANOMALY_INTERCEPTED:" + reason
+            );
 
             continue;
         }
 
         // --------------------------------
-        // 2. Check DNS Cache
+        // 2. DNS Sinkhole / Blocklist
+        // --------------------------------
+        if (filter.isBlocked(domain)) {
+
+            std::cout << "SINKHOLE: "
+                      << domain
+                      << " -> BLOCKED"
+                      << std::endl;
+
+            stats.recordBlocked();
+
+            logger.log(domain, "SINKHOLE_BLOCKED");
+
+            continue;
+        }
+
+        // --------------------------------
+        // 3. Check DNS Cache
         // --------------------------------
         std::string cachedResponse;
 
@@ -64,19 +94,22 @@ int main() {
                       << std::endl;
 
             stats.recordCacheHit();
+
             logger.log(domain, "CACHE_HIT");
 
             continue;
         }
 
         // --------------------------------
-        // 3. Resolve DNS
+        // 4. Resolve DNS
         // --------------------------------
         bool resolved = resolver.resolve(domain);
 
         if (resolved) {
 
-            std::cout << "ALLOWED: " << domain << std::endl;
+            std::cout << "ALLOWED: "
+                      << domain
+                      << std::endl;
 
             // Store result in cache
             cache.put(domain, "RESOLVED");
@@ -102,4 +135,3 @@ int main() {
 
     return 0;
 }
-
