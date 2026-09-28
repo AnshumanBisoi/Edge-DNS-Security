@@ -5,3 +5,4 @@ test_dns_filter
 test_dns_packet
 test_dns_resolver
 logs/
+build/
