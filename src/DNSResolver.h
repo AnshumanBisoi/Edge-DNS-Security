@@ -7,8 +7,7 @@ class DNSResolver {
 public:
     DNSResolver();
 
-    bool resolve(const std::string& domain);
+    bool resolve(const std::string& domain, std::string& ipAddress);
 };
 
 #endif
-
