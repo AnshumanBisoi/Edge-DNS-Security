@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
-
+#include <fcntl.h>
+#include <unistd.h>
 #include "DNSFilter.h"
 #include "DNSResolver.h"
 #include "DNSCache.h"
@@ -9,8 +10,20 @@
 #include "Logger.h"
 #include "Statistics.h"
 
-int main() {
+void sendToKernel(const std::string& message)
+{
+    int fd = open("/dev/dns_guard", O_WRONLY);
 
+    if (fd < 0) {
+        return;
+    }
+
+    write(fd, message.c_str(), message.size());
+    close(fd);
+}
+
+int main()
+{
     DNSFilter filter;
     DNSResolver resolver;
 
@@ -55,17 +68,13 @@ int main() {
             break;
         }
 
-        // Every entered domain is a query
-
         stats.recordAllowed();
 
         // --------------------------------
         // 1. Protocol Anomaly Detection
         // --------------------------------
 
-        if (
-            anomalyDetector.isAnomalous(domain)
-        ) {
+        if (anomalyDetector.isAnomalous(domain)) {
 
             std::string reason =
                 anomalyDetector.getReason(domain);
@@ -89,6 +98,10 @@ int main() {
                 "ANOMALY_INTERCEPTED:" + reason
             );
 
+            sendToKernel(
+                "ANOMALY: " + domain + " " + reason
+            );
+
             continue;
         }
 
@@ -96,9 +109,7 @@ int main() {
         // 2. DNS Sinkhole / Blocklist
         // --------------------------------
 
-        if (
-            filter.isBlocked(domain)
-        ) {
+        if (filter.isBlocked(domain)) {
 
             std::cout
                 << "SINKHOLE: "
@@ -113,6 +124,10 @@ int main() {
                 "SINKHOLE_BLOCKED"
             );
 
+            sendToKernel(
+                "BLOCKED: " + domain
+            );
+
             continue;
         }
 
@@ -122,12 +137,7 @@ int main() {
 
         std::string cachedResponse;
 
-        if (
-            cache.get(
-                domain,
-                cachedResponse
-            )
-        ) {
+        if (cache.get(domain, cachedResponse)) {
 
             std::cout
                 << "CACHE HIT: "
@@ -141,6 +151,10 @@ int main() {
             logger.log(
                 domain,
                 "CACHE_HIT"
+            );
+
+            sendToKernel(
+                "CACHE HIT: " + domain + " -> " + cachedResponse
             );
 
             continue;
@@ -167,8 +181,6 @@ int main() {
                 << resolvedIP
                 << std::endl;
 
-            // Store actual IP in cache
-
             cache.put(
                 domain,
                 resolvedIP
@@ -177,6 +189,10 @@ int main() {
             logger.log(
                 domain,
                 "ALLOWED:" + resolvedIP
+            );
+
+            sendToKernel(
+                "ALLOWED: " + domain + " -> " + resolvedIP
             );
 
         } else {
@@ -189,6 +205,10 @@ int main() {
             logger.log(
                 domain,
                 "RESOLUTION_FAILED"
+            );
+
+            sendToKernel(
+                "RESOLUTION FAILED: " + domain
             );
         }
     }
@@ -205,4 +225,3 @@ int main() {
 
     return 0;
 }
-
