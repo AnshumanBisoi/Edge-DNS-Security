@@ -1,10 +1,12 @@
-
-# Build files
-dns_security
-test_dns_filter
-test_dns_packet
-test_dns_resolver
-logs/
+build
 build/
-test_dns_anomaly
-test_dns_anomaly
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+Module.symvers
+modules.order
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
